@@ -1,8 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import HomePage from "./app/home";
+import SignInPage from "./app/signIn";
 import StoreProvider from "./components/StoreProvider";
 import UIProvider from "./components/UIProvider";
-import SignInPage from "./app/signIn";
 
 const App = () => {
 	return (

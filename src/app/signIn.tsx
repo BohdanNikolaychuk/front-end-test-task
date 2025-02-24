@@ -1,43 +1,76 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { loginFailure, loginStart, loginSuccess } from "../store/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "../store/store";
-import {
-	loginFailure,
-	loginStart,
-	loginSuccess,
-} from "../store/slices/authSlice";
 
-const SignInPage: any = () => {
-	const navigate: any = useNavigate();
-	const dispatch: any = useAppDispatch();
-	const isAuthenticated: any = useAppSelector(
-		(state: any) => state.auth.isAuthenticated,
-	);
+const SignInPage: React.FC = () => {
+	const navigate = useNavigate();
+	const dispatch = useAppDispatch();
+	const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+	const loading = useAppSelector((state) => state.auth.loading);
+	const error = useAppSelector((state) => state.auth.error);
 
-	const [email, setEmail]: any = React.useState("");
-	const [password, setPassword]: any = React.useState("");
+	const [formData, setFormData] = useState<{ email: string; password: string }>({
+		email: "",
+		password: "",
+	});
 
-	React.useEffect(() => {
-		if (isAuthenticated === true) navigate("/");
+	useEffect(() => {
+		if (isAuthenticated) {
+			navigate("/");
+		}
 	}, [isAuthenticated, navigate]);
 
-	async function handleSubmit(e: any) {
-		e.preventDefault();
-		dispatch(loginStart());
+	const validateEmail = (email: string) => {
+		return /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(email);
+	};
 
-		await new Promise((r) => setTimeout(r, 1000));
+	const handleSubmit = 
+		async (e: React.FormEvent<HTMLFormElement>) => {
+			e.preventDefault();
+	
+			const { email, password } = formData;
+	
+			if (!email) {
+				dispatch(loginFailure("Email is required"));
+				return;
+			}
+			
+			if (!password) {
+				dispatch(loginFailure("Password is required"));
+				return;
+			}
+	
+			if (!validateEmail(email)) {
+				dispatch(loginFailure("Email not valid"));
+				return;
+			}
+	
+			dispatch(loginStart());
+	
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+	
+			if (email === "test@test.test" && password === "password") {
+				dispatch(
+					loginSuccess({
+						email,
+						name: email.split("@")[0],
+						id: Math.random(),
+						role: "user",
+					})
+				);
+			} else {
+				dispatch(loginFailure("User not found"));
+			}
+		}
 
-		if (email && password) {
-			dispatch(
-				loginSuccess({
-					email: email,
-					name: email.split("@")[0],
-					id: Math.random(),
-					role: "user",
-				}),
-			);
-		} else dispatch(loginFailure("Please fill all fields"));
-	}
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setFormData((prev) => ({
+			...prev,
+			[e.target.name]: e.target.value,
+		}));
+	};
+	
 
 	return (
 		<div className="h-screen flex items-center justify-center bg-gray-50">
@@ -46,27 +79,27 @@ const SignInPage: any = () => {
 					<h1 className="text-2xl font-bold text-gray-800 text-center mb-6">
 						Sign In
 					</h1>
-
+					{error && (
+						<div className="mb-4 text-red-600 text-sm text-center">{error}</div>
+					)}
 					<form onSubmit={handleSubmit}>
 						<div className="mb-4">
 							<label htmlFor="email" className="block text-sm font-medium mb-2">
 								Email address
 							</label>
 							<input
-								type="email"
 								id="email"
 								name="email"
 								className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
-								required
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
+								value={formData.email}
+								onChange={handleChange}
 							/>
 						</div>
-
 						<div className="mb-6">
 							<label
 								htmlFor="password"
-								className="block text-sm font-medium mb-2">
+								className="block text-sm font-medium mb-2"
+							>
 								Password
 							</label>
 							<input
@@ -74,16 +107,16 @@ const SignInPage: any = () => {
 								id="password"
 								name="password"
 								className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
-								required
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
+								value={formData.password}
+								onChange={handleChange}
 							/>
 						</div>
-
 						<button
 							type="submit"
-							className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
-							Sign in
+							className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+							disabled={loading}
+						>
+							{loading ? "Signing in..." : "Sign in"}
 						</button>
 					</form>
 				</div>
