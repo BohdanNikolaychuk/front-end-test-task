@@ -5,34 +5,34 @@ import StoreProvider from "./components/StoreProvider";
 import UIProvider from "./components/UIProvider";
 
 const App = () => {
-	return (
-		<StoreProvider>
-			<BrowserRouter>
-				<Routes>
-					<Route
-						path="/"
-						element={
-							<PageWrapper>
-								<HomePage />
-							</PageWrapper>
-						}
-					/>
-					<Route
-						path="/sign-in"
-						element={
-							<PageWrapper>
-								<SignInPage />
-							</PageWrapper>
-						}
-					/>
-				</Routes>
-			</BrowserRouter>
-		</StoreProvider>
-	);
+  return (
+    <StoreProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <PageWrapper>
+                <HomePage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/sign-in"
+            element={
+              <PageWrapper>
+                <SignInPage />
+              </PageWrapper>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </StoreProvider>
+  );
 };
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => {
-	return <UIProvider>{children}</UIProvider>;
+  return <UIProvider>{children}</UIProvider>;
 };
 
 export default App;

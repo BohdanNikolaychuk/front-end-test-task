@@ -58,7 +58,7 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
   let result = await baseQuery(args, api, extraOptions);
   if (result.error) {
-    await new Promise((resolve) => setTimeout(resolve, 1000)); 
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     result = await baseQuery(args, api, extraOptions);
   }
   return result;
@@ -69,7 +69,7 @@ export const catsApi = createApi({
   baseQuery: baseQueryWithRetry,
   endpoints: (builder) => ({
     getCats: builder.query<CatModel[], void>({
-      query: () => "", 
+      query: () => "",
     }),
   }),
 });
