@@ -2,13 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { loginFailure, loginStart, loginSuccess } from "../store/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "../store/store";
+import { validateEmail } from "../utils/validateEmail";
 
 const SignInPage: React.FC = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
-	const loading = useAppSelector((state) => state.auth.loading);
-	const error = useAppSelector((state) => state.auth.error);
+	const {isAuthenticated, loading , error} = useAppSelector((state) => state.auth);
 
 	const [formData, setFormData] = useState<{ email: string; password: string }>({
 		email: "",
@@ -21,9 +20,6 @@ const SignInPage: React.FC = () => {
 		}
 	}, [isAuthenticated, navigate]);
 
-	const validateEmail = (email: string) => {
-		return /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(email);
-	};
 
 	const handleSubmit = 
 		async (e: React.FormEvent<HTMLFormElement>) => {
@@ -71,7 +67,6 @@ const SignInPage: React.FC = () => {
 		}));
 	};
 	
-
 	return (
 		<div className="h-screen flex items-center justify-center bg-gray-50">
 			<div className="w-full max-w-md">
