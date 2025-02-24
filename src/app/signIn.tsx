@@ -21,44 +21,44 @@ const SignInPage: React.FC = () => {
 	}, [isAuthenticated, navigate]);
 
 
-	const handleSubmit = 
-		async (e: React.FormEvent<HTMLFormElement>) => {
-			e.preventDefault();
-	
-			const { email, password } = formData;
-	
-			if (!email) {
-				dispatch(loginFailure("Email is required"));
-				return;
-			}
-			
-			if (!password) {
-				dispatch(loginFailure("Password is required"));
-				return;
-			}
-	
-			if (!validateEmail(email)) {
-				dispatch(loginFailure("Email not valid"));
-				return;
-			}
-	
-			dispatch(loginStart());
-	
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-	
-			if (email === "test@test.test" && password === "password") {
-				dispatch(
-					loginSuccess({
-						email,
-						name: email.split("@")[0],
-						id: Math.random(),
-						role: "user",
-					})
-				);
-			} else {
-				dispatch(loginFailure("User not found"));
-			}
-		}
+	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const { email, password } = formData;
+
+    const validateInputs = () => {
+        if (!email) return "Email is required";
+        if (!password) return "Password is required";
+        if (!validateEmail(email)) return "Email not valid";
+        return null; 
+    };
+
+    const validationError = validateInputs();
+    if (validationError) {
+        dispatch(loginFailure(validationError));
+        return;
+    }
+
+    dispatch(loginStart());
+
+    try {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        if (email === "test@test.test" && password === "password") {
+            dispatch(loginSuccess({
+                email,
+                name: email.split("@")[0],
+                id: Math.random(),
+                role: "user",
+            }));
+        } else {
+            dispatch(loginFailure("User not found"));
+        }
+	} catch {
+        dispatch(loginFailure("An error occurred during login"));
+    }
+};
+
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setFormData((prev) => ({
