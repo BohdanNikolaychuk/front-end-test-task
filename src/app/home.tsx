@@ -39,12 +39,14 @@ const HomePage: React.FC = () => {
 
   const { data, error, isLoading } = useGetCatsQuery();
 
-  const [adaptabilityData, setAdaptabilityData] = useState<DataState[]>([]);
-  const [affectionData, setAffectionData] = useState<DataState[]>([]);
-  const [originData, setOriginData] = useState<DataState[]>([]);
-  const [indoorData, setIndoorData] = useState<DataState[]>([]);
-  const [lapData, setLapData] = useState<DataState[]>([]);
-  const [lifeSpanData, setLifeSpanData] = useState<DataState[]>([]);
+  const [chartData, setChartData] = useState({
+    adaptabilityData: [] as DataState[],
+    affectionData: [] as DataState[],
+    originData: [] as DataState[],
+    indoorData: [] as DataState[],
+    lapData: [] as DataState[],
+    lifeSpanData: [] as DataState[],
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -54,24 +56,26 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     if (data) {
-      setAdaptabilityData(
-        data.map((cat) => ({ name: cat.name, value: cat.adaptability || 0 }))
-      );
-      setAffectionData(
-        data.map((cat) => ({ name: cat.name, value: cat.affection_level || 0 }))
-      );
+      const adaptabilityData = data.map((cat) => ({
+        name: cat.name,
+        value: cat.adaptability || 0,
+      }));
+      const affectionData = data.map((cat) => ({
+        name: cat.name,
+        value: cat.affection_level || 0,
+      }));
+
       const originCount = data.reduce((acc: { [key: string]: number }, cat) => {
         const origin = cat.origin || "Unknown";
         acc[origin] = (acc[origin] || 0) + 1;
         return acc;
       }, {});
 
-      setOriginData(
-        Object.keys(originCount).map((origin) => ({
-          name: origin,
-          value: originCount[origin],
-        }))
-      );
+      const originData = Object.keys(originCount).map((origin) => ({
+        name: origin,
+        value: originCount[origin],
+      }));
+
       const indoorCount = data.reduce(
         (acc, cat) => {
           if (cat.indoor === 1) {
@@ -84,25 +88,32 @@ const HomePage: React.FC = () => {
         { indoor: 0, outdoor: 0 }
       );
 
-      setIndoorData([
+      const indoorData = [
         { name: "Indoor", value: indoorCount.indoor },
         { name: "Outdoor", value: indoorCount.outdoor },
-      ]);
+      ];
 
-      setLapData([
+      const lapData = [
         { name: "Lap Cat", value: data.filter((cat) => cat.lap === 1).length },
         {
           name: "Not Lap Cat",
           value: data.filter((cat) => cat.lap === 0).length,
         },
-      ]);
+      ];
 
-      setLifeSpanData(
-        data.map((cat) => ({
-          name: cat.name,
-          years: parseFloat(cat.life_span) || 0,
-        }))
-      );
+      const lifeSpanData = data.map((cat) => ({
+        name: cat.name,
+        years: parseFloat(cat.life_span) || 0,
+      }));
+
+      setChartData({
+        adaptabilityData,
+        affectionData,
+        originData,
+        indoorData,
+        lapData,
+        lifeSpanData,
+      });
     }
   }, [data]);
 
@@ -134,7 +145,7 @@ const HomePage: React.FC = () => {
           </h2>
           <div className="h-[300px]">
             <ResponsiveContainer>
-              <BarChart data={adaptabilityData}>
+              <BarChart data={chartData.adaptabilityData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -150,7 +161,7 @@ const HomePage: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4">Affection Levels</h2>
           <div className="h-[300px]">
             <ResponsiveContainer>
-              <BarChart data={affectionData}>
+              <BarChart data={chartData.affectionData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -168,7 +179,7 @@ const HomePage: React.FC = () => {
             <ResponsiveContainer>
               <PieChart>
                 <Pie
-                  data={originData}
+                  data={chartData.originData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -176,7 +187,7 @@ const HomePage: React.FC = () => {
                   outerRadius={100}
                   label
                 >
-                  {originData.map((_, index) => (
+                  {chartData.originData.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -199,7 +210,7 @@ const HomePage: React.FC = () => {
             <ResponsiveContainer>
               <PieChart>
                 <Pie
-                  data={indoorData}
+                  data={chartData.indoorData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -207,7 +218,7 @@ const HomePage: React.FC = () => {
                   outerRadius={100}
                   label
                 >
-                  {indoorData.map((_, index) => (
+                  {chartData.indoorData.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -228,7 +239,7 @@ const HomePage: React.FC = () => {
             <ResponsiveContainer>
               <PieChart>
                 <Pie
-                  data={lapData}
+                  data={chartData.lapData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -236,7 +247,7 @@ const HomePage: React.FC = () => {
                   outerRadius={100}
                   label
                 >
-                  {lapData.map((_, index) => (
+                  {chartData.lapData.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -255,7 +266,7 @@ const HomePage: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4">Life Span Distribution</h2>
           <div className="h-[300px]">
             <ResponsiveContainer>
-              <LineChart data={lifeSpanData}>
+              <LineChart data={chartData.lifeSpanData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -266,7 +277,20 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
-
+      <div className="m-8">
+        <label htmlFor="sort" className="mr-2">
+          Sort by:
+        </label>
+        <select
+          id="sort"
+          className="px-3 py-2 border border-gray-300 rounded-md"
+        >
+          <option value="name">Name</option>
+          <option value="value">Adaptability</option>
+          <option value="value">Affection Level</option>
+          <option value="years">Life Span</option>
+        </select>
+      </div>
       {/* Cats Grid */}
       <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {data?.map((cat) => (
