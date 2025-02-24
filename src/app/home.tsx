@@ -44,7 +44,7 @@ const HomePage: React.FC = () => {
   const [originData, setOriginData] = useState<DataState[]>([]);
   const [indoorData, setIndoorData] = useState<DataState[]>([]);
   const [lapData, setLapData] = useState<DataState[]>([]);
-  const [lifeSpanData, setLifeSpanData] = useState<DataState<number>[]>([]);
+  const [lifeSpanData, setLifeSpanData] = useState<DataState[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {

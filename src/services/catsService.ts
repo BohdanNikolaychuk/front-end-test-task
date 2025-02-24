@@ -1,4 +1,8 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import {
+  BaseQueryApi,
+  createApi,
+  fetchBaseQuery,
+} from "@reduxjs/toolkit/query/react";
 
 interface CatModel {
   weight: { imperial: string; metric: string };
@@ -47,15 +51,14 @@ interface CatModel {
 }
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: "https://api.thecatapi.com/v1/breeds",
-  prepareHeaders: (headers) => {
-    // Додаємо API ключ у заголовки запиту
-    headers.set("x-api-key", "YOUR_API_KEY_HERE");
-    return headers;
-  },
+  baseUrl: "https://api.thecatapi.com/v1/",
 });
 
-const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
+const baseQueryWithRetry = async (
+  args: Parameters<typeof baseQuery>[0],
+  api: BaseQueryApi,
+  extraOptions: object
+) => {
   let result = await baseQuery(args, api, extraOptions);
   if (result.error) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -69,7 +72,7 @@ export const catsApi = createApi({
   baseQuery: baseQueryWithRetry,
   endpoints: (builder) => ({
     getCats: builder.query<CatModel[], void>({
-      query: () => "",
+      query: () => "breeds",
     }),
   }),
 });
