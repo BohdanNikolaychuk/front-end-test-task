@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   Bar,
@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useGetCatsQuery } from "../services/catsService";
+import { CatModel, useGetCatsQuery } from "../services/catsService";
 import { useAppSelector } from "../store/store";
 
 const COLORS = [
@@ -25,6 +25,13 @@ const COLORS = [
   "#FF8042",
   "#8884d8",
   "#82ca9d",
+];
+
+const SORT_OPTIONS = [
+  { value: "name", label: "Name" },
+  { value: "origin", label: "Origin" },
+  { value: "affection_level", label: "Affection Level" },
+  { value: "adaptability", label: "Adaptability" },
 ];
 
 interface DataState<T = number> {
@@ -47,6 +54,9 @@ const HomePage: React.FC = () => {
     lapData: [] as DataState[],
     lifeSpanData: [] as DataState[],
   });
+
+  const [sortField, setSortField] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -116,6 +126,26 @@ const HomePage: React.FC = () => {
       });
     }
   }, [data]);
+
+  const sortedCats = useMemo(() => {
+    if (!data) return [];
+
+    return [...data].sort((a, b) => {
+      const key = sortField as keyof CatModel;
+      const valueA = a[key];
+      const valueB = b[key];
+
+      if (typeof valueA === "string" && typeof valueB === "string") {
+        return sortOrder === "asc"
+          ? valueA.localeCompare(valueB)
+          : valueB.localeCompare(valueA);
+      }
+
+      return sortOrder === "asc"
+        ? Number(valueA) - Number(valueB)
+        : Number(valueB) - Number(valueA);
+    });
+  }, [data, sortField, sortOrder]);
 
   if (isLoading) {
     return (
@@ -277,23 +307,29 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
-      <div className="m-8">
-        <label htmlFor="sort" className="mr-2">
-          Sort by:
-        </label>
+      <div className="flex items-center gap-4 p-6 rounded-lg">
         <select
-          id="sort"
-          className="px-3 py-2 border border-gray-300 rounded-md"
+          value={sortField}
+          onChange={(e) => setSortField(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="name">Name</option>
-          <option value="value">Adaptability</option>
-          <option value="value">Affection Level</option>
-          <option value="years">Life Span</option>
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
+        <button
+          onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition flex items-center gap-2"
+        >
+          {sortOrder === "asc" ? "🔼 Sort Ascending" : "🔽 Sort Descending"}
+        </button>
       </div>
+
       {/* Cats Grid */}
-      <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {data?.map((cat) => (
+      <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sortedCats?.map((cat) => (
           <div
             key={cat.name}
             className="group flex flex-col h-full bg-white border border-gray-200 shadow-sm rounded-xl"
