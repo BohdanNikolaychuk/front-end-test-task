@@ -34,26 +34,11 @@ const SORT_OPTIONS = [
   { value: "adaptability", label: "Adaptability" },
 ];
 
-interface DataState<T = number> {
-  name: string;
-  value?: T;
-  years?: T;
-}
-
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
   const { data, error, isLoading } = useGetCatsQuery();
-
-  const [chartData, setChartData] = useState({
-    adaptabilityData: [] as DataState[],
-    affectionData: [] as DataState[],
-    originData: [] as DataState[],
-    indoorData: [] as DataState[],
-    lapData: [] as DataState[],
-    lifeSpanData: [] as DataState[],
-  });
 
   const [sortField, setSortField] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -64,67 +49,68 @@ const HomePage: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  useEffect(() => {
-    if (data) {
-      const adaptabilityData = data.map((cat) => ({
-        name: cat.name,
-        value: cat.adaptability || 0,
-      }));
-      const affectionData = data.map((cat) => ({
-        name: cat.name,
-        value: cat.affection_level || 0,
-      }));
+  const chartData = useMemo(() => {
+    if (!data) return {};
 
-      const originCount = data.reduce((acc: { [key: string]: number }, cat) => {
-        const origin = cat.origin || "Unknown";
-        acc[origin] = (acc[origin] || 0) + 1;
+    const adaptabilityData = data.map((cat) => ({
+      name: cat.name,
+      value: cat.adaptability || 0,
+    }));
+
+    const affectionData = data.map((cat) => ({
+      name: cat.name,
+      value: cat.affection_level || 0,
+    }));
+
+    const originCount = data.reduce((acc: { [key: string]: number }, cat) => {
+      const origin = cat.origin || "Unknown";
+      acc[origin] = (acc[origin] || 0) + 1;
+      return acc;
+    }, {});
+
+    const originData = Object.keys(originCount).map((origin) => ({
+      name: origin,
+      value: originCount[origin],
+    }));
+
+    const indoorCount = data.reduce(
+      (acc, cat) => {
+        if (cat.indoor === 1) {
+          acc.indoor = (acc.indoor || 0) + 1;
+        } else if (cat.indoor === 0) {
+          acc.outdoor = (acc.outdoor || 0) + 1;
+        }
         return acc;
-      }, {});
+      },
+      { indoor: 0, outdoor: 0 }
+    );
 
-      const originData = Object.keys(originCount).map((origin) => ({
-        name: origin,
-        value: originCount[origin],
-      }));
+    const indoorData = [
+      { name: "Indoor", value: indoorCount.indoor },
+      { name: "Outdoor", value: indoorCount.outdoor },
+    ];
 
-      const indoorCount = data.reduce(
-        (acc, cat) => {
-          if (cat.indoor === 1) {
-            acc.indoor = (acc.indoor || 0) + 1;
-          } else if (cat.indoor === 0) {
-            acc.outdoor = (acc.outdoor || 0) + 1;
-          }
-          return acc;
-        },
-        { indoor: 0, outdoor: 0 }
-      );
+    const lapData = [
+      { name: "Lap Cat", value: data.filter((cat) => cat.lap === 1).length },
+      {
+        name: "Not Lap Cat",
+        value: data.filter((cat) => cat.lap === 0).length,
+      },
+    ];
 
-      const indoorData = [
-        { name: "Indoor", value: indoorCount.indoor },
-        { name: "Outdoor", value: indoorCount.outdoor },
-      ];
+    const lifeSpanData = data.map((cat) => ({
+      name: cat.name,
+      years: parseFloat(cat.life_span) || 0,
+    }));
 
-      const lapData = [
-        { name: "Lap Cat", value: data.filter((cat) => cat.lap === 1).length },
-        {
-          name: "Not Lap Cat",
-          value: data.filter((cat) => cat.lap === 0).length,
-        },
-      ];
-
-      const lifeSpanData = data.map((cat) => ({
-        name: cat.name,
-        years: parseFloat(cat.life_span) || 0,
-      }));
-
-      setChartData({
-        adaptabilityData,
-        affectionData,
-        originData,
-        indoorData,
-        lapData,
-        lifeSpanData,
-      });
-    }
+    return {
+      adaptabilityData,
+      affectionData,
+      originData,
+      indoorData,
+      lapData,
+      lifeSpanData,
+    };
   }, [data]);
 
   const sortedCats = useMemo(() => {
@@ -217,7 +203,7 @@ const HomePage: React.FC = () => {
                   outerRadius={100}
                   label
                 >
-                  {chartData.originData.map((_, index) => (
+                  {chartData.originData?.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -248,7 +234,7 @@ const HomePage: React.FC = () => {
                   outerRadius={100}
                   label
                 >
-                  {chartData.indoorData.map((_, index) => (
+                  {chartData.indoorData?.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -277,7 +263,7 @@ const HomePage: React.FC = () => {
                   outerRadius={100}
                   label
                 >
-                  {chartData.lapData.map((_, index) => (
+                  {chartData.lapData?.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
