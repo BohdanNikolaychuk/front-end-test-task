@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   Bar,
@@ -15,8 +15,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import FilterBar from "../components/FilterBar";
+import useChartData from "../hooks/useChartData";
+import useFilteredData, { SortOrder } from "../hooks/useFilteredData";
 import { CatModel, useGetCatsQuery } from "../services/catsService";
 import { useAppSelector } from "../store/store";
+
+export type SortOption = {
+  value: string;
+  label: string;
+};
 
 const COLORS = [
   "#0088FE",
@@ -27,111 +35,33 @@ const COLORS = [
   "#82ca9d",
 ];
 
-const SORT_OPTIONS = [
+const SORT_OPTIONS: SortOption[] = [
   { value: "name", label: "Name" },
   { value: "origin", label: "Origin" },
   { value: "affection_level", label: "Affection Level" },
   { value: "adaptability", label: "Adaptability" },
 ];
-
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
   const { data, error, isLoading } = useGetCatsQuery();
 
-  const [sortField, setSortField] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortField, setSortField] = useState<keyof CatModel>("name");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+
+  const chartData = useChartData(data);
+  const sortedCats = useFilteredData<CatModel>({
+    data,
+    sortField,
+    sortOrder,
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/sign-in");
     }
   }, [isAuthenticated, navigate]);
-
-  const chartData = useMemo(() => {
-    if (!data) return {};
-
-    const adaptabilityData = data.map((cat) => ({
-      name: cat.name,
-      value: cat.adaptability || 0,
-    }));
-
-    const affectionData = data.map((cat) => ({
-      name: cat.name,
-      value: cat.affection_level || 0,
-    }));
-
-    const originCount = data.reduce((acc: { [key: string]: number }, cat) => {
-      const origin = cat.origin || "Unknown";
-      acc[origin] = (acc[origin] || 0) + 1;
-      return acc;
-    }, {});
-
-    const originData = Object.keys(originCount).map((origin) => ({
-      name: origin,
-      value: originCount[origin],
-    }));
-
-    const indoorCount = data.reduce(
-      (acc, cat) => {
-        if (cat.indoor === 1) {
-          acc.indoor = (acc.indoor || 0) + 1;
-        } else if (cat.indoor === 0) {
-          acc.outdoor = (acc.outdoor || 0) + 1;
-        }
-        return acc;
-      },
-      { indoor: 0, outdoor: 0 }
-    );
-
-    const indoorData = [
-      { name: "Indoor", value: indoorCount.indoor },
-      { name: "Outdoor", value: indoorCount.outdoor },
-    ];
-
-    const lapData = [
-      { name: "Lap Cat", value: data.filter((cat) => cat.lap === 1).length },
-      {
-        name: "Not Lap Cat",
-        value: data.filter((cat) => cat.lap === 0).length,
-      },
-    ];
-
-    const lifeSpanData = data.map((cat) => ({
-      name: cat.name,
-      years: parseFloat(cat.life_span) || 0,
-    }));
-
-    return {
-      adaptabilityData,
-      affectionData,
-      originData,
-      indoorData,
-      lapData,
-      lifeSpanData,
-    };
-  }, [data]);
-
-  const sortedCats = useMemo(() => {
-    if (!data) return [];
-
-    return [...data].sort((a, b) => {
-      const key = sortField as keyof CatModel;
-      const valueA = a[key];
-      const valueB = b[key];
-
-      if (typeof valueA === "string" && typeof valueB === "string") {
-        return sortOrder === "asc"
-          ? valueA.localeCompare(valueB)
-          : valueB.localeCompare(valueA);
-      }
-
-      return sortOrder === "asc"
-        ? Number(valueA) - Number(valueB)
-        : Number(valueB) - Number(valueA);
-    });
-  }, [data, sortField, sortOrder]);
 
   if (isLoading) {
     return (
@@ -294,23 +224,13 @@ const HomePage: React.FC = () => {
         </div>
       </div>
       <div className="flex items-center gap-4 p-6 rounded-lg">
-        <select
-          value={sortField}
-          onChange={(e) => setSortField(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition flex items-center gap-2"
-        >
-          {sortOrder === "asc" ? "🔼 Sort Ascending" : "🔽 Sort Descending"}
-        </button>
+        <FilterBar
+          sortField={sortField}
+          setSortField={setSortField}
+          sortOptions={SORT_OPTIONS}
+          setSortOrder={setSortOrder}
+          sortOrder={sortOrder}
+        />
       </div>
 
       {/* Cats Grid */}
